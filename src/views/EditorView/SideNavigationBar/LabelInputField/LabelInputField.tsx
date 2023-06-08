@@ -8,7 +8,10 @@ import {IPoint} from '../../../../interfaces/IPoint';
 import {RectUtil} from '../../../../utils/RectUtil';
 import {AppState} from '../../../../store';
 import {connect} from 'react-redux';
-import {updateActiveLabelId, updateHighlightedLabelId} from '../../../../store/labels/actionCreators';
+import {
+    updateActiveLabelId, 
+    updateHighlightedLabelId
+} from '../../../../store/labels/actionCreators';
 import Scrollbars from 'react-custom-scrollbars-2';
 import {EventType} from '../../../../data/enums/EventType';
 import {LabelName} from '../../../../store/labels/types';
@@ -52,12 +55,18 @@ class LabelInputField extends React.Component<IProps, IState> {
             animate: false,
             isOpen: false
         }
+        
     }
 
     public componentDidMount(): void {
         requestAnimationFrame(() => {
             this.setState({ animate: true });
         });
+        
+        const tempLabelNameId = LabelsSelector.getActiveLabelNameId() 
+            ? LabelsSelector.getActiveLabelNameId() 
+            : this.props.options[0].id
+        this.props.onSelectLabel(this.props.id, tempLabelNameId);
     }
 
     private getClassName() {
