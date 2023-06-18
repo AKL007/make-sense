@@ -1,5 +1,5 @@
-import {ILine} from "../interfaces/ILine";
-import {IPoint} from "../interfaces/IPoint";
+import { ILine } from "../interfaces/ILine";
+import { IPoint } from "../interfaces/IPoint";
 
 export class LineUtil {
     public static getDistanceFromLine(l: ILine, p: IPoint): number {
@@ -20,5 +20,18 @@ export class LineUtil {
 
     public static getPoints(l: ILine): IPoint[] {
         return [l.start, l.end]
+    }
+
+    private static isCounterClockWise(p1: IPoint, p2: IPoint, p3: IPoint): boolean {
+        return (p3.y - p1.y) * (p2.x - p1.x) > (p2.y - p1.y) * (p3.x - p1.x)
+    }
+
+    public static doLinesIntersect(l1: ILine, l2: ILine): boolean {
+        const A = l1.start
+        const B = l1.end
+        const C = l2.start
+        const D = l2.end
+        return (this.isCounterClockWise(A, C, D) != this.isCounterClockWise(B, C, D))
+            && (this.isCounterClockWise(A, B, C) != this.isCounterClockWise(A, B, D))
     }
 }
