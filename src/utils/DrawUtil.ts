@@ -34,12 +34,41 @@ export class DrawUtil {
         ctx.restore();
     }
 
+    public static drawRotatedRect(canvas:HTMLCanvasElement, anchors: IPoint[], color = '#fff', thickness = 1): void {
+        const ctx:CanvasRenderingContext2D = canvas.getContext('2d');
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = thickness;
+        ctx.beginPath();
+        ctx.moveTo(anchors[0].x, anchors[0].y);
+        for (let i = 1; i < anchors.length; i ++) {
+            ctx.lineTo(anchors[i].x, anchors[i].y);
+        }
+        // ctx.rect(rect.x, rect.y, rect.width, rect.height);
+        ctx.stroke();
+        ctx.restore();
+    }
+
     public static drawRectWithFill(canvas:HTMLCanvasElement, rect:IRect, color = '#fff'): void {
         const ctx:CanvasRenderingContext2D = canvas.getContext('2d');
         ctx.save();
         ctx.fillStyle = color;
         ctx.beginPath();
         ctx.rect(rect.x, rect.y, rect.width, rect.height);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    public static drawRotatedRectWithFill(canvas:HTMLCanvasElement, anchors: IPoint[], color = '#fff'): void {
+        const ctx:CanvasRenderingContext2D = canvas.getContext('2d');
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(anchors[0].x, anchors[0].y);
+        for (let i = 1; i < anchors.length; i ++) {
+            ctx.lineTo(anchors[i].x, anchors[i].y);
+        }
+        // ctx.rect(rect.x, rect.y, rect.width, rect.height);
         ctx.fill();
         ctx.restore();
     }
