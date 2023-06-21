@@ -4,6 +4,7 @@ import {ISize} from '../interfaces/ISize';
 import {RectAnchor} from '../data/RectAnchor';
 import {NumberUtil} from './NumberUtil';
 import {Direction} from '../data/enums/Direction';
+import { LineUtil } from './LineUtil';
 
 export class RectUtil {
     public static getRatio(rect: IRect): number {
@@ -114,6 +115,68 @@ export class RectUtil {
         return rect;
     }
 
+    public static rotateRect(rect: IRect, startAnchorPosition: IPoint, slope: number, dimension: number): IRect {
+        debugger;
+        const anchorSlope = LineUtil.getSlope({'start': this.getCenter(rect) , 'end': startAnchorPosition})
+        const scaleFactor = 0.5
+        // multiply by -1 since XY plane of image is with +Y downwards, while rect.rotation is with +ve Y upwards
+        const torque = scaleFactor * dimension * Math.sin(anchorSlope - slope)
+        const existingRotation = rect.rotation ? rect.rotation : 0
+        const newAngle = existingRotation + torque*(2*Math.PI)/360
+        return {
+            ...rect,
+            rotation: newAngle
+        }
+    }
+
+    public static getRotatedRectVertices(rect: IRect): IPoint[] {
+        if(!rect.rotation){
+            rect.rotation = 0
+        }
+        const a = rect.width/2
+        const b = rect.height/2
+        const side = Math.sqrt(a*a + b*b)
+        const alpha = Math.atan2(b, a)
+        let rotatedVertices: IPoint[] = []
+        for (let i=0; i < 4; i++){
+            switch(i){
+                case 0:
+                    let angle1 = alpha + rect.rotation
+                    rotatedVertices.push(
+                        {
+                            x: rect.x + rect.width/2 + (Math.cos(angle1) * side),
+                            y: rect.y + rect.height/2 - (Math.sin(angle1) * side)
+                        })
+                    break;
+                case 1:
+                    let angle2 = Math.PI - alpha + rect.rotation
+                    rotatedVertices.push(
+                        {
+                            x: rect.x + rect.width/2 + (Math.cos(angle2) * side),
+                            y: rect.y + rect.height/2 - (Math.sin(angle2) * side)
+                        })
+                    break;
+                case 2:
+                    let angle3 = Math.PI + alpha + rect.rotation
+                    rotatedVertices.push(
+                        {
+                            x: rect.x + rect.width/2 + (Math.cos(angle3) * side),
+                            y: rect.y + rect.height/2 - (Math.sin(angle3) * side)
+                        })
+                    break;
+                case 3:
+                    let angle4 = -alpha + rect.rotation
+                    rotatedVertices.push(
+                        {
+                            x: rect.x + rect.width/2 + (Math.cos(angle4) * side),
+                            y: rect.y + rect.height/2 - (Math.sin(angle4) * side)
+                        })
+                    break;
+            }
+        }
+        return rotatedVertices
+    }
+
     public static translate(rect: IRect, delta: IPoint): IRect {
         return {
             ...rect,
@@ -136,21 +199,39 @@ export class RectUtil {
             x: rect.x * scale,
             y: rect.y * scale,
             width: rect.width * scale,
-            height: rect.height * scale
+            height: rect.height * scale,
+            rotation: rect.rotation
         }
     }
 
     public static mapRectToAnchors(rect: IRect): RectAnchor[] {
-        return [
-            {type: Direction.TOP_LEFT, position: {x: rect.x, y: rect.y}},
-            {type: Direction.TOP, position: {x: rect.x + 0.5 * rect.width, y: rect.y}},
-            {type: Direction.TOP_RIGHT, position: {x: rect.x + rect.width, y: rect.y}},
-            {type: Direction.LEFT, position: {x: rect.x, y: rect.y + 0.5 * rect.height}},
-            {type: Direction.RIGHT, position: {x: rect.x + rect.width, y: rect.y + 0.5 * rect.height}},
-            {type: Direction.BOTTOM_LEFT, position: {x: rect.x, y: rect.y + rect.height}},
-            {type: Direction.BOTTOM, position: {x: rect.x + 0.5 * rect.width, y: rect.y + rect.height}},
-            {type: Direction.BOTTOM_RIGHT, position: {x: rect.x + rect.width, y: rect.y + rect.height}}
-        ]
+        if(!rect.rotation){
+            return [
+                {type: Direction.TOP_LEFT, position: {x: rect.x, y: rect.y}},
+                {type: Direction.TOP, position: {x: rect.x + 0.5 * rect.width, y: rect.y}},
+                {type: Direction.TOP_RIGHT, position: {x: rect.x + rect.width, y: rect.y}},
+                {type: Direction.LEFT, position: {x: rect.x, y: rect.y + 0.5 * rect.height}},
+                {type: Direction.RIGHT, position: {x: rect.x + rect.width, y: rect.y + 0.5 * rect.height}},
+                {type: Direction.BOTTOM_LEFT, position: {x: rect.x, y: rect.y + rect.height}},
+                {type: Direction.BOTTOM, position: {x: rect.x + 0.5 * rect.width, y: rect.y + rect.height}},
+                {type: Direction.BOTTOM_RIGHT, position: {x: rect.x + rect.width, y: rect.y + rect.height}}
+            ]
+        }
+        else {
+            const rotatedRectVertices = this.getRotatedRectVertices(rect)
+            return [
+                {type: Direction.TOP_RIGHT, position: {x: rotatedRectVertices[0].x, y: rotatedRectVertices[0].y}},
+                {type: Direction.TOP, position: LineUtil.getCenter({'start': rotatedRectVertices[0], 'end': rotatedRectVertices[1]})},
+                {type: Direction.TOP_LEFT, position: {x: rotatedRectVertices[1].x, y: rotatedRectVertices[1].y}},
+                {type: Direction.LEFT, position: LineUtil.getCenter({'start': rotatedRectVertices[1], 'end': rotatedRectVertices[2]})},
+                {type: Direction.BOTTOM_LEFT, position: {x: rotatedRectVertices[2].x, y: rotatedRectVertices[2].y}},
+                {type: Direction.BOTTOM, position: LineUtil.getCenter({'start': rotatedRectVertices[2], 'end': rotatedRectVertices[3]})},
+                {type: Direction.BOTTOM_RIGHT, position: {x: rotatedRectVertices[3].x, y: rotatedRectVertices[3].y}},
+                {type: Direction.RIGHT, position: LineUtil.getCenter({'start': rotatedRectVertices[3], 'end': rotatedRectVertices[0]})},
+                
+            ]
+        }
+        
     }
 
     public static snapPointToRect(point: IPoint, rect: IRect): IPoint {
